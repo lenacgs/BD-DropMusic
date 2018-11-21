@@ -1,37 +1,37 @@
 CREATE TABLE user (
-	username varchar(512),
+	username varchar(512) NOT NULL UNIQUE,
 	password varchar(512) NOT NULL,
 	editor	 boolean NOT NULL,
 	PRIMARY KEY(username)
 );
 
 CREATE TABLE playlist (
-	name		 varchar(512),
+	name		 varchar(256) NOT NULL UNIQUE,
 	private	 boolean NOT NULL,
-	user_username varchar(512),
+	user_username varchar(256),
 	PRIMARY KEY(name,user_username)
 );
 
 CREATE TABLE review (
 	rate		 int NOT NULL,
 	text		 text NOT NULL,
-	album_id	 int,
+	album_id	 int NOT NULL UNIQUE,
 	user_username varchar(512),
 	PRIMARY KEY(album_id,user_username)
 );
 
 CREATE TABLE musicfile (
-	pathtofile	 varchar(512),
-	music_id	 int NOT NULL,
+	pathtofile	 varchar(512) UNIQUE,
+	music_id	 int NOT NULL UNIQUE,
 	user_username varchar(512) NOT NULL,
 	PRIMARY KEY(pathtofile)
 );
 
 CREATE TABLE music (
-	id	 int AUTO_INCREMENT,
+	id	 int AUTO_INCREMENT UNIQUE NOT NULL,
 	title	 varchar(512) NOT NULL,
 	duration float(8) NOT NULL,
-	lyrics	 text NOT NULL,
+	lyrics	 text,
 	PRIMARY KEY(id)
 );
 
@@ -44,7 +44,7 @@ CREATE TABLE concert (
 );
 
 CREATE TABLE interpreter (
-	id		 int,
+	id		 int NOT NULL UNIQUE,
 	name	 varchar(512) NOT NULL,
 	description text NOT NULL,
 	PRIMARY KEY(id)
@@ -52,18 +52,18 @@ CREATE TABLE interpreter (
 
 CREATE TABLE band (
 	dateofcreation int,
-	interpreter_id int,
+	interpreter_id int NOT NULL UNIQUE,
 	PRIMARY KEY(interpreter_id)
 );
 
 CREATE TABLE artist (
 	birthday	 timestamp,
-	interpreter_id int,
+	interpreter_id int NOT NULL UNIQUE,
 	PRIMARY KEY(interpreter_id)
 );
 
 CREATE TABLE album (
-	id		 int AUTO_INCREMENT,
+	id		 int AUTO_INCREMENT NOT NULL UNIQUE,
 	title		 varchar(512) NOT NULL,
 	yearofpublication int NOT NULL,
 	description	 text NOT NULL,
@@ -72,82 +72,82 @@ CREATE TABLE album (
 );
 
 CREATE TABLE composer (
-	id		 int AUTO_INCREMENT,
+	id		 int AUTO_INCREMENT NOT NULL UNIQUE,
 	name	 varchar(512) NOT NULL,
 	description text NOT NULL,
 	PRIMARY KEY(id)
 );
 
 CREATE TABLE publisher (
-	name varchar(448),
+	name varchar(448) unique NOT NULL,
 	PRIMARY KEY(name)
 );
 
 CREATE TABLE local (
-	country varchar(448),
-	city	 varchar(448),
+	country varchar(256) unique NOT NULL,
+	city	varchar(256) unique NOT NULL,
 	PRIMARY KEY(country,city)
 );
 
 CREATE TABLE venue (
-	name		 varchar(256),
-	local_country varchar(256),
-	local_city	 varchar(512),
+	name		 varchar(256) NOT NULL,
+	local_country varchar(256) unique NOT NULL,
+	local_city	 varchar(256) unique NOT NULL, 
 	PRIMARY KEY(name,local_country,local_city)
 );
 
 CREATE TABLE user_musicfile (
-	user_username	 varchar(448),
-	musicfile_pathtofile varchar(448),
+	user_username	 varchar(256) NOT NULL,
+	musicfile_pathtofile varchar(256) not null,
 	PRIMARY KEY(user_username,musicfile_pathtofile)
 );
 
 CREATE TABLE interpreter_concert (
-	interpreter_id	 int,
-	concert_datetime timestamp,
+	interpreter_id	 int not null,
+	concert_datetime timestamp not null,
 	PRIMARY KEY(interpreter_id,concert_datetime)
 );
 
 CREATE TABLE band_artist (
-	band_interpreter_id	 int,
-	artist_interpreter_id int,
+	band_interpreter_id	 int not null,
+	artist_interpreter_id int not null,
 	PRIMARY KEY(band_interpreter_id,artist_interpreter_id)
 );
 
 CREATE TABLE music_interpreter (
-	music_id	 int,
-	interpreter_id int,
+	music_id	 int not null,
+	interpreter_id int not null,
 	PRIMARY KEY(music_id,interpreter_id)
 );
 
 CREATE TABLE album_publisher (
-	album_id	 int,
-	publisher_name varchar(448),
+	album_id	 int not null,
+	publisher_name varchar(448) not null,
 	PRIMARY KEY(album_id,publisher_name)
 );
 
 CREATE TABLE artist_composer (
-	artist_interpreter_id int,
-	composer_id		 int UNIQUE NOT NULL,
+	artist_interpreter_id int not null,
+	composer_id		 int not null,
 	PRIMARY KEY(artist_interpreter_id)
 );
 
 CREATE TABLE composer_music (
-	composer_id int,
-	music_id	 int,
+	composer_id int not null,
+	music_id	 int not null,
 	PRIMARY KEY(composer_id,music_id)
 );
 
 CREATE TABLE album_music (
-	album_id int,
-	music_id int,
+	album_id int not null,
+	music_id int not null,
 	PRIMARY KEY(album_id,music_id)
 );
 
 CREATE TABLE playlist_music (
-	playlist_name		 varchar(448),
-	playlist_user_username varchar(448),
-	music_id		 int,
+	playlist_name		 varchar(256) not null,
+	playlist_user_username varchar(256) not null,
+	music_id		 int not null,
 	PRIMARY KEY(playlist_name,playlist_user_username,music_id)
 );
 
