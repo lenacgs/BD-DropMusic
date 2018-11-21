@@ -1,0 +1,4 @@
+CREATE USER 'DBUser'@'localhost' IDENTIFIED BY 'password';
+CREATE DATABASE DropMusicDB;
+USE DropMusicDB;
+GRANT ALL PRIVILEGES ON DropMusicDB.* TO 'DBUser'@'localhost' WITH GRANT OPTION;
