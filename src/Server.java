@@ -1,13 +1,44 @@
-import javax.xml.bind.SchemaOutputResolver;
+import java.rmi.*;
 import java.sql.*;
-import java.net.*;
+import java.rmi.server.*;
+import java.rmi.registry.*;
 
 
-public class Server {
+public class Server extends UnicastRemoteObject implements RMIServices {
     private Connection connection; //connection to the database
+    private int port;
+    private static RMIServices RMIServices;
+    int clientPort;
 
-    public Server () {
+    public Server () throws RemoteException, InterruptedException {
         connection = null;
+        port = 7001;
+        clientPort = 7000;
+        createRegistry();
+    }
+
+    public static void main(String[] args) {
+        try {
+            RMIServices = new Server();
+        } catch (RemoteException | InterruptedException exc) {
+            exc.printStackTrace();
+        }
+    }
+
+    private void createRegistry() throws RemoteException, InterruptedException { //creates registry of new RMIServer on port 7000
+        try {
+            Registry registry = LocateRegistry.createRegistry(port);
+            System.out.println(registry);
+            registry.rebind("RMIServer", RMIServices);
+            System.out.println("RMIServer is up!");
+        } catch (AccessException exc) {
+            System.out.println("AccessException: " + exc.getMessage());
+        }
+    }
+
+    public int hello() throws RemoteException {
+        clientPort++;
+        return clientPort;
     }
 
 
