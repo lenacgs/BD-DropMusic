@@ -5,27 +5,25 @@ import java.rmi.registry.*;
 
 
 public class Server extends UnicastRemoteObject implements RMIServices {
-    private Connection connection; //connection to the database
-    private int port;
+    private Connection connection = null; //connection to the database
+    private int port = 7001;
     private static RMIServices RMIServices;
-    int clientPort;
+    int clientPort = 7000;
 
     public Server () throws RemoteException, InterruptedException {
-        connection = null;
-        port = 7001;
-        clientPort = 7000;
-        createRegistry();
     }
 
     public static void main(String[] args) {
         try {
             RMIServices = new Server();
+            createRegistry();
         } catch (RemoteException | InterruptedException exc) {
             exc.printStackTrace();
         }
     }
 
-    private void createRegistry() throws RemoteException, InterruptedException { //creates registry of new RMIServer on port 7000
+    private static void createRegistry() throws RemoteException, InterruptedException { //creates registry of new RMIServer on port 7000
+        int port = 7000;
         try {
             Registry registry = LocateRegistry.createRegistry(port);
             System.out.println(registry);
