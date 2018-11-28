@@ -65,11 +65,12 @@ public class Client extends UnicastRemoteObject {
         System.out.println("———————————");
 
         while (true) {
+            option = 0;
             System.out.println();
             System.out.println(" ———————————————");
-            System.out.println("| 1) Register  |");
-            System.out.println("| 2) Login     |");
-            System.out.println("| 3) Exit      |");
+            System.out.println("| 0) Exit       |");
+            System.out.println("| 1) Register   |");
+            System.out.println("| 2) Login      |");
             System.out.println(" ———————————————");
 
             try {
@@ -128,7 +129,43 @@ public class Client extends UnicastRemoteObject {
                 return;
             }
 
+            else if (option == 1 && editor == 1) { //inserir nova música na BD
+                insertMusic();
+            }
 
+
+        }
+    }
+
+    private void insertMusic() {
+        String title, lyrics, album;
+        float duration;
+        boolean verifier = false;
+        int interpreter_id, composer_id, album_id;
+
+        System.out.println("\n ————————————————");
+        System.out.println("INSERT NEW MUSIC");
+        System.out.println(" ————————————————\n");
+        System.out.println("Title: ");
+        title = sc.nextLine();
+        System.out.println("Duration: ");
+        duration = Float.parseFloat(sc.nextLine());
+        System.out.println("Lyrics: ");
+        lyrics = sc.nextLine();
+        System.out.println("Composer ID: ");
+        composer_id = Integer.parseInt(sc.nextLine());
+        System.out.println("Interpreter ID: ");
+        interpreter_id = Integer.parseInt(sc.nextLine());
+        System.out.println("Album ID: ");
+        album_id = Integer.parseInt(sc.nextLine());
+
+        while(true) {
+            try {
+                verifier = RMI.insertMusic(username, password, title, duration, lyrics, interpreter_id, composer_id, album_id);
+                break;
+            } catch (RemoteException exc) {
+                retryRMIConnection();
+            }
         }
     }
 
@@ -169,7 +206,7 @@ public class Client extends UnicastRemoteObject {
 
             if (verifier == 0) {
                 System.out.println("-!- User register failed");
-                return false;
+                continue;
             }
 
             else if (verifier > 0) { //1=editor, 2=normal

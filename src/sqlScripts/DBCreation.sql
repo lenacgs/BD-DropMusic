@@ -44,7 +44,7 @@ CREATE TABLE concert (
 );
 
 CREATE TABLE interpreter (
-	id		 int NOT NULL UNIQUE,
+	id		 int AUTO_INCREMENT NOT NULL UNIQUE,
 	name	 varchar(512) NOT NULL,
 	description text NOT NULL,
 	PRIMARY KEY(id)

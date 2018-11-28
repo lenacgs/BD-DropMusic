@@ -40,7 +40,7 @@ public class Server extends UnicastRemoteObject implements RMIServices {
         return clientPort;
     }
 
-    public int login(String username, String password) {
+    public int login(String username, String password) throws RemoteException {
         String query = "SELECT username, editor FROM user WHERE username=\"" + username +"\" AND password=\"" + password + "\";";
         ResultSet res = DBQuery(query);
         int privileges = 0;
@@ -60,7 +60,7 @@ public class Server extends UnicastRemoteObject implements RMIServices {
 
     }
 
-    public int register(String username, String password) {
+    public int register(String username, String password) throws RemoteException {
         String query = "SELECT * FROM user";
         ResultSet res = DBQuery(query);
         int privileges = 0;
@@ -75,10 +75,38 @@ public class Server extends UnicastRemoteObject implements RMIServices {
         } catch(SQLException exc) { }
 
         query = "INSERT INTO user (username, password, editor) VALUES (\"" + username + "\", \"" + password + "\", " + privileges + ");";
-        DBUpdate(query);
-        System.out.println("Returning " + privileges);
+
+        if (!DBUpdate(query)) return 0;
         return privileges;
     }
+
+    public boolean insertMusic(String username, String password, String title, float duration, String lyrics, int interpreter_id, int composer_id, int album_id) throws RemoteException {
+        String query = "INSERT INTO music (title, duration, lyrics) VALUES (\""+title+"\", \""+duration+"\", \""+lyrics+"\");";
+
+        if (!DBUpdate(query)) return false;
+
+        //get music ID
+        String query2 = "(SELECT ID FROM music WHERE title=\""+title+"\" AND lyrics=\""+lyrics+"\")";
+
+        //associar o intérprete com a música
+        query = "INSERT INTO music_interpreter (music_id, interpreter_id) VALUES " +
+                "("+query2+ ", " + interpreter_id+");";
+
+        if (!DBUpdate(query)) return false;
+
+        //associar o compositor com a música
+        query = "INSERT INTO composer_music (composer_id, music_id) VALUES ("+composer_id+", " + query2+");";
+
+        if (!DBUpdate(query)) return false;
+
+        //associar o álbum à música
+        query = "INSERT INTO album_music (album_id, music_id) VALUES ("+album_id+", "+query2+");";
+
+        if (!DBUpdate(query)) return false;
+        return true;
+    }
+
+
 
 
     public boolean connectDatabase() { //returns true if connection to DB is successful; false if else
@@ -91,7 +119,7 @@ public class Server extends UnicastRemoteObject implements RMIServices {
 
         try {
             connection = DriverManager.getConnection(
-                    "jdbc:mysql://127.0.0.1:3306/DropMusicDB",
+                    "jdbc:mysql://127.0.0.1:3306/DropMusicDatabase",
                     "DBUser", "password");
         } catch (SQLException exc) {
             System.err.println("Database connection failed");
@@ -99,7 +127,7 @@ public class Server extends UnicastRemoteObject implements RMIServices {
             return false;
         }
 
-        System.out.println("Connected to DropMusicDB");
+        System.out.println("Connected to DropMusicDatabase");
         return true;
     }
 
@@ -137,7 +165,6 @@ public class Server extends UnicastRemoteObject implements RMIServices {
 
         } catch (SQLException exc) {
             System.out.println("Error executing " + query);
-            exc.printStackTrace();
             return false;
         }
 
