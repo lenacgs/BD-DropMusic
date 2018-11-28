@@ -61,12 +61,13 @@ public class Server extends UnicastRemoteObject implements RMIServices {
     }
 
     public int register(String username, String password) throws RemoteException {
-        String query = "SELECT * FROM user";
+        String query = "SELECT count(*) FROM user";
         ResultSet res = DBQuery(query);
         int privileges = 0;
 
         try {
-            if (!res.next()) { //se não houver registos na tabela user, significa que este user é o admin=editor
+            res.next();
+            if (res.getInt("count(*)") == 0) { //se não houver registos na tabela user, significa que este user é o admin=editor
                 privileges = 1;
             }
             else { //já existem users na tabela, então este user é normal
@@ -78,6 +79,25 @@ public class Server extends UnicastRemoteObject implements RMIServices {
 
         if (!DBUpdate(query)) return 0;
         return privileges;
+    }
+
+    public boolean insertAlbum(String title, int year, String description, String genre, int[] musicIDs, String publisher) {
+        String query = "INSERT INTO album (title, yearofpublication, description, genre) VALUES (\""+title+"\", "+year+", \""+description+"\", \""+genre+"\");";
+
+        if (!DBUpdate(query)) return false;
+
+        //associar músicas ao álbum
+        for (int music : musicIDs) {
+            query = "INSERT INTO album_music (album_id, music_id) VALUES (SELECT ID FROM album WHERE title="+title+" AND description="+description+", "+ music +");";
+            if (!DBUpdate(query)) return false;
+        }
+
+        //associar publisher ao álbum
+        query = "INSERT INTO album_publisher (album_id, publisher_name) VALUES ((SELECT ID FROM album WHERE title=\""+title+ "\" AND description=\"" + description+"\"), \"" + publisher+"\");";
+        if (!DBUpdate(query)) return false;
+
+        return true;
+
     }
 
     public boolean insertMusic(String username, String password, String title, float duration, String lyrics, int interpreter_id, int composer_id, int album_id) throws RemoteException {

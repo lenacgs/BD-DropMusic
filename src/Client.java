@@ -133,8 +133,52 @@ public class Client extends UnicastRemoteObject {
                 insertMusic();
             }
 
+            else if (option == 3 && editor == 1) { //inserir novo artista na BD
+                insertAlbum();
+            }
 
         }
+    }
+
+    private void insertAlbum() {
+        String title, description, genre, publisher;
+        int year, musicCount;
+        int musicIDs[];
+        boolean verifier;
+
+        System.out.println("\n ————————————————");
+        System.out.println("INSERT NEW ALBUM");
+        System.out.println(" ————————————————\n");
+        System.out.println("Title: ");
+        title = sc.nextLine();
+        System.out.println("Description: ");
+        description = sc.nextLine();
+        System.out.println("Year of publication: ");
+        year = Integer.parseInt(sc.nextLine());
+        System.out.println("Genre: ");
+        genre = sc.nextLine();
+        System.out.println("Publisher: ");
+        publisher = sc.nextLine();
+        System.out.println("How many musics do you want to add to this album?: ");
+        musicCount = Integer.parseInt(sc.nextLine());
+        musicIDs = new int[musicCount];
+        for (int i=0; i<musicCount; i++) {
+            System.out.println("Music ID: ");
+            musicIDs[i] = Integer.parseInt(sc.nextLine());
+        }
+
+        while (true) {
+            try {
+                verifier = RMI.insertAlbum(title, year, description, genre, musicIDs, publisher);
+                break;
+            } catch (RemoteException exc) {
+                retryRMIConnection();
+            }
+        }
+
+
+
+
     }
 
     private void insertMusic() {
