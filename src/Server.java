@@ -2,6 +2,7 @@ import java.rmi.*;
 import java.sql.*;
 import java.rmi.server.*;
 import java.rmi.registry.*;
+import java.util.ArrayList;
 
 
 public class Server extends UnicastRemoteObject implements RMIServices {
@@ -58,6 +59,52 @@ public class Server extends UnicastRemoteObject implements RMIServices {
         }
         return privileges;
 
+    }
+
+    public ArrayList<String[]> getPlaylists(String username) {
+        String query = "SELECT name, user_username FROM playlist WHERE private=false OR user_username=\""+username+"\";";
+        ArrayList<String[]> message = new ArrayList<>();
+
+        ResultSet res = DBQuery(query);
+        int i=0;
+
+        try {
+            while (res.next()) {
+                String [] obj = new String[2];
+                obj[0] = res.getString("name");
+                obj[1] = res.getString("user_username");
+
+                message.add(obj);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return message;
+    }
+
+    public boolean newPlaylist(String username, String name, boolean priv, int [] musicIDs) {
+        String query = "INSERT INTO playlist (name, private, user_username) VALUES (\""+name+"\", "+priv+", \""+username+"\");";
+
+        if (!DBUpdate(query)) return false;
+
+        for (int music : musicIDs) {
+            query = "INSERT INTO playlist_music (playlist_name, playlist_user_username, music_id) VALUES (\""+name+"\", \""+username+"\", "+music+");";
+            if (!DBUpdate(query)) return false;
+        }
+
+        return true;
+    }
+
+    public ArrayList<String[]> getPlaylist(String name, String username) {
+        return null;
+    }
+
+    public boolean writeReview(String username, int album, String review, int rate) {
+        String query = "INSERT INTO review (rate, text, album_id, user_username) values ("+rate+", \""+review+"\", "+album+", \""+username+"\");";
+
+        if (!DBUpdate(query)) return false;
+        return true;
     }
 
     public int register(String username, String password) throws RemoteException {

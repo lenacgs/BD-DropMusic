@@ -5,6 +5,7 @@ import java.rmi.*;
 import java.net.*;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 
@@ -118,6 +119,7 @@ public class Client extends UnicastRemoteObject {
             System.out.println("10) Album info");
             System.out.println("11) Write album review");
             System.out.println("12) Editor privileges");
+            System.out.println("13) Playlists");
 
             try {
                 option = Integer.parseInt(sc.nextLine().replaceAll("^[,\\s]+", ""));
@@ -137,7 +139,87 @@ public class Client extends UnicastRemoteObject {
                 insertAlbum();
             }
 
+            else if (option == 13) {
+                playlists();
+            }
+
+            else if (option == 11) {
+                writeReview();
+            }
+
         }
+    }
+
+    private void writeReview() {
+        System.out.println("Insert album ID: ");
+        int album = Integer.parseInt(sc.nextLine());
+        System.out.println("Write your review: ");
+        String review = sc.nextLine();
+        System.out.println("Rate this album (0-10): ");
+        int rate = Integer.parseInt(sc.nextLine());
+
+        try {
+            boolean verifier = RMI.writeReview(username, album, review, rate);
+        } catch (RemoteException e) {
+            retryRMIConnection();
+        }
+    }
+
+    private void playlists() {
+        System.out.println("\n ———————————");
+        System.out.println("PLAYLISTS");
+        System.out.println(" ———————————\n");
+        ArrayList<String[]> playlists = new ArrayList<>();
+        String name;
+        int musicCount;
+        int [] musicIDs;
+        boolean verifier, priv;
+
+        try {
+            playlists = RMI.getPlaylists(username);
+        } catch (RemoteException exc) {
+            retryRMIConnection();
+        }
+        int i=1;
+        for (String[] obj : playlists) {
+            System.out.println(i+") " +obj[0]+" by " + obj[1]);
+            i++;
+        }
+
+        System.out.println("\nDo you want to...\n1) Create new playlist\n2) See one of the existing playlists");
+        int option = Integer.parseInt(sc.nextLine());
+
+        if (option == 1) {
+            System.out.println("Playlist name: ");
+            name = sc.nextLine();
+            System.out.println("Private? (true/false): ");
+            priv = Boolean.parseBoolean(sc.nextLine());
+            System.out.println("How many musics do you want to add?: ");
+            musicCount = Integer.parseInt(sc.nextLine());
+            musicIDs = new int[musicCount];
+            for (int j=0; j<musicCount; j++) {
+                System.out.println("Music ID:");
+                musicIDs[j] = Integer.parseInt(sc.nextLine());
+            }
+
+            try {
+                verifier = RMI.newPlaylist(username, name, priv, musicIDs);
+            } catch (RemoteException e) {
+                retryRMIConnection();
+            }
+
+        }
+        if (option == 2) {
+            System.out.println("Insert playlist index: ");
+            option = Integer.parseInt(sc.nextLine());
+
+            try {
+                ArrayList<String[]> musics = RMI.getPlaylist(playlists.get(option-1)[0], playlists.get(option-1)[1]);
+            } catch (RemoteException e) {
+                retryRMIConnection();
+            }
+        }
+
     }
 
     private void insertAlbum() {
