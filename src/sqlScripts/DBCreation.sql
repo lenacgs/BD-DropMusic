@@ -64,7 +64,7 @@ CREATE TABLE artist (
 
 CREATE TABLE album (
 	id		 int AUTO_INCREMENT NOT NULL UNIQUE,
-	title		 varchar(512) NOT NULL,
+	title		 r(512) NOT NULL,
 	yearofpublication int NOT NULL,
 	description	 text NOT NULL,
 	genre		 varchar(512) NOT NULL,
