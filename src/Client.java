@@ -5,6 +5,7 @@ import java.rmi.*;
 import java.net.*;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.server.UnicastRemoteObject;
+import java.sql.SQLOutput;
 import java.util.ArrayList;
 import java.util.Scanner;
 
@@ -138,7 +139,9 @@ public class Client extends UnicastRemoteObject {
             else if (option == 3 && editor == 1) { //inserir novo artista na BD
                 insertAlbum();
             }
-
+            else if (option == 12 && editor == 1) {
+                changePerks();
+            }
             else if (option == 13) {
                 playlists();
             }
@@ -218,6 +221,24 @@ public class Client extends UnicastRemoteObject {
             } catch (RemoteException e) {
                 retryRMIConnection();
             }
+        }
+
+    }
+
+    private void changePerks(){
+        String username;
+        boolean verifier;
+
+        System.out.println("\n ————————————————");
+        System.out.println("INSERT USERNAME");
+        System.out.println(" ————————————————\n");
+        username = sc.nextLine();
+
+        verifier = RMI.changePerks(username);
+        if(verifier = true){
+            System.out.println("Changed " + username + " perks successfully!");
+        }else{
+            System.out.println("Failed to change " + username + "perks!");
         }
 
     }

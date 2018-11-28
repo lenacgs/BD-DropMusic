@@ -173,7 +173,10 @@ public class Server extends UnicastRemoteObject implements RMIServices {
         return true;
     }
 
-
+    public boolean changePerks(String username){
+        String query = "UPDATE user SET editor = 1 where username = " + username;
+        return (DBUpdate(query));
+    }
 
 
     public boolean connectDatabase() { //returns true if connection to DB is successful; false if else

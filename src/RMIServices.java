@@ -11,4 +11,5 @@ public interface RMIServices extends Remote {
     boolean newPlaylist(String username, String name, boolean priv, int [] musicIDs) throws RemoteException;
     public ArrayList<String[]> getPlaylist(String name, String username) throws RemoteException;
     boolean writeReview(String username, int album, String review, int rate) throws RemoteException;
+    boolean changePerks(String username) throws RemoteException;
 }
