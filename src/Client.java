@@ -234,7 +234,11 @@ public class Client extends UnicastRemoteObject {
         System.out.println(" ————————————————\n");
         username = sc.nextLine();
 
-        verifier = RMI.changePerks(username);
+        try{
+            verifier = RMI.changePerks(username);
+        }catch(RemoteException exc){
+            retryRMIConnection();
+        }
         if(verifier = true){
             System.out.println("Changed " + username + " perks successfully!");
         }else{
