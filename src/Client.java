@@ -1,10 +1,14 @@
 import com.sun.scenario.effect.impl.sw.sse.SSEBlend_SRC_OUTPeer;
+import sun.misc.REException;
 
 import java.io.IOException;
 import java.rmi.*;
 import java.net.*;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.server.UnicastRemoteObject;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 import java.sql.SQLOutput;
 import java.util.ArrayList;
 import java.util.Scanner;
@@ -140,10 +144,15 @@ public class Client extends UnicastRemoteObject {
             else if (option == 3 && editor == 1) { //inserir novo artista na BD
                 insertAlbum();
             }
+            else if(option == 10){
+                searchMusic();
+            }
+            else if(option == 11){
+                albumDetails();
+            }
             else if (option == 7) { //upload de ficheiro
                 uploadFile();
             }
-
             else if (option == 8) { //partilha de ficheiro musical com outro user
                 shareFile();
             }
@@ -216,6 +225,43 @@ public class Client extends UnicastRemoteObject {
             retryRMIConnection();
         }
     }
+
+    private void albumDetails(){
+        int id = -1;
+        System.out.println("\n ———————————");
+        System.out.println("ALBUM DETAILS");
+        System.out.println(" ———————————\n");
+        System.out.println("Album title:");
+        String title = sc.nextLine();
+        try{
+            id = showSearchResults(RMI.searchAlbum(title));
+            if(id > 0){
+                String reply[] = RMI.getAlbumInfo(id);
+                String[] aux = reply[1].split("/");
+                System.out.println("Genre : " + aux[0]);
+                System.out.println("Year of publication: " + aux[1]);
+                System.out.println("Average rate: " + aux[2]);
+                System.out.println("Songlist:");
+                System.out.println(reply[0]);
+            }
+        }catch(RemoteException e){
+            retryRMIConnection();
+        }
+    }
+
+    private void searchMusic() {
+        System.out.println("\n ———————————");
+        System.out.println("FIND MUSIC");
+        System.out.println(" ———————————\n");
+        System.out.println("Interpreter name:");
+        String name = sc.nextLine();
+        try{
+            showSearchResults2(RMI.searchMusic(name));
+        }catch (RemoteException e){
+            retryRMIConnection();
+        }
+    }
+
 
     private void playlists() {
         System.out.println("\n ———————————");
@@ -298,10 +344,8 @@ public class Client extends UnicastRemoteObject {
 
     private void insertAlbum() {
         String title, description, genre, publisher;
-        int year, musicCount;
-        int musicIDs[];
-        boolean verifier;
-
+        int year;
+        int album_id, interpreter_id = -1;
         System.out.println("\n ————————————————");
         System.out.println("INSERT NEW ALBUM");
         System.out.println(" ————————————————\n");
@@ -315,49 +359,302 @@ public class Client extends UnicastRemoteObject {
         genre = sc.nextLine();
         System.out.println("Publisher: ");
         publisher = sc.nextLine();
-        System.out.println("How many musics do you want to add to this album?: ");
-        musicCount = Integer.parseInt(sc.nextLine());
-        musicIDs = new int[musicCount];
-        for (int i=0; i<musicCount; i++) {
-            System.out.println("Music ID: ");
-            musicIDs[i] = Integer.parseInt(sc.nextLine());
+        System.out.println("Interpreter:");
+        while (interpreter_id < 0) {
+            System.out.println("1 - Create a new interpreter\n2 - Find an existing interpreter");
+            int reply;
+            do {
+                reply = Integer.parseInt(sc.nextLine());
+                if (reply == 0) return;
+            } while (reply != 2 && reply != 1);
+            if (reply == 1) {
+                interpreter_id = createInterpreter();
+            } else {
+                System.out.println("Interpreter name: ");
+                String name = sc.nextLine();
+                try {
+                    interpreter_id = showSearchResults(RMI.searchInterpreter(name));
+                    System.out.println(interpreter_id);
+                } catch (RemoteException exc) {
+                    retryRMIConnection();
+                }
+            }
         }
-
         while (true) {
             try {
-                verifier = RMI.insertAlbum(title, year, description, genre, musicIDs, publisher);
+                album_id = RMI.insertAlbum(title, year, description, genre, interpreter_id, publisher);
                 break;
             } catch (RemoteException exc) {
                 retryRMIConnection();
             }
         }
-
-
+        if(album_id == -1)return;
+        int count = 0;
+        System.out.println("Add a songs to the album:");
+        while(true){
+            insertMusic(interpreter_id, album_id);
+            System.out.println("Do you want to add more songs to the album?\n1 - Yes\n2 - No");
+            int option = Integer.parseInt(sc.nextLine().replaceAll("\n", ""));
+            if(option == 0)break;
+        }
 
 
     }
 
-    private void insertMusic() {
-        String title, lyrics, album;
+    private int showSearchResults(String[] res){
+        if(res == null) return -1;
+        int i = 1, reply;
+        for(int k = 0; k < res.length; k++){
+            String[] aux = res[k].split("/");
+            System.out.println(i++ + " - " + aux[1] + " (" + aux[2] + ")");
+        }
+        reply = -1;
+        while(reply > i-1 || reply < 0){
+            try{
+                reply = Integer.parseInt(sc.nextLine().replaceAll("\n", ""));
+            }catch(NumberFormatException exc){
+                System.out.println("Please insert a valid option!");
+            }
+            if(reply == 0)return -1;
+            else{
+                String aux[] = res[reply-1].split("/");
+                System.out.println(aux[0]);
+                return Integer.parseInt(aux[0]);
+            }
+        }
+        return -1;
+    }
+
+    private void showSearchResults2(String[] res){
+        if(res == null) return;
+        for(int k = 0; k < res.length; k++){
+            String[] aux = res[k].split("/");
+            System.out.println(aux[1] + " (" + aux[2] + ")");
+        }
+    }
+
+    private int createComposer(){
+        int verifier = -1;
+        String name, description;
+        System.out.println("Name: ");
+        name = sc.nextLine().replaceAll("\n", "");
+        System.out.println("Description: ");
+        description = sc.nextLine().replaceAll("\n", "");
+        while(true){
+            try{
+                verifier = RMI.createComposer(name, description);
+                return verifier;
+            }catch(RemoteException exc){
+                retryRMIConnection();
+            }
+        }
+    }
+
+    private boolean checkMonth(int[] months, int month){
+        for(int i = 0; i < months.length; i++){
+            if(month == months[i]){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean verifyDate(String date){
+        int months31[] = {1,3,5,7,8,10,12};
+        int months30[] = {2,4,6,9,11};
+        String[] tokens = date.split("-");
+        int year = Integer.parseInt(tokens[0]), month = Integer.parseInt(tokens[1]), day = Integer.parseInt(tokens[2]);
+        if(year < 1900 || year > 2018){
+            return false;
+        }
+        if(month > 12 || month < 1){
+            return false;
+        }
+        if(checkMonth(months31, month) && (day > 31 || day < 1)){
+            return false;
+        }else if(checkMonth(months30, month) && (day > 30 || day < 1)){
+            return false;
+        }else if(year%4 ==  0 && month == 2 && (day > 29 || day < 1)){
+            return false;
+        }else if(year%4 != 0 && month == 2 && (day > 28 || day < 1)){
+            return false;
+        }
+        return true;
+
+    }
+
+
+    private int createInterpreter(){
+        int option, verifier = -1;
+        do{
+            System.out.println("Type of interpreter:\n1 - Solo artist\n2 - Band");
+            option = sc.nextInt();
+            if(option == 0)return -1;
+        }while(option != 1 || option != 2);
+        String name, description, date;
+        System.out.println("Name: ");
+        name = sc.nextLine();
+        System.out.println("Description: ");
+        description = sc.nextLine();
+        do{
+            if(option == 1){
+                System.out.println("Date of birth: (yyyy-mm-dd");
+            }else{
+                System.out.println("Date of creation: (yyyy-mm-dd");
+            }
+            date = sc.nextLine();
+            if(date.equals("0"))return -1;
+        }while(!verifyDate(date));
+
+        while(true){
+            try{
+                if(option == 1){
+                    verifier = RMI.createArtist(name, description, date);
+                }else{
+                    verifier = RMI.createBand(name, description, date);
+                }
+                return verifier;
+            }catch(RemoteException exc){
+                retryRMIConnection();
+            }
+        }
+    }
+
+    private void insertMusic(int interpreter_id, int album_id){
+        int composer_id = -1;
+        String title, lyrics;
         float duration;
         boolean verifier = false;
-        int interpreter_id, composer_id, album_id;
+        System.out.println("Title: ");
+        title = sc.nextLine();
+        System.out.println("Duration: ");
+        while(true){
+            try{
+                duration = Float.parseFloat(sc.nextLine());
+                break;
+            }catch(NumberFormatException e){
+                System.out.println("Please insert a valid option!");
+            }
+        }
+        System.out.println("Lyrics: ");
+        lyrics = sc.nextLine();
+        System.out.println("Composer: ");
+        while(composer_id < 0){
+            System.out.println("1 - Create a new composer\n2 - Find an existing composer:");
+            int reply;
+            do{
+                reply = Integer.parseInt(sc.nextLine().replaceAll("\n", ""));
+                if(reply == 0)return;
+            }while(reply != 2 && reply != 1);
+            if(reply == 1){
+                composer_id = createComposer();
+            }else{
+                System.out.println("Composer name: ");
+                String name = sc.nextLine().replaceAll("\n", "");
+                try{
+                    composer_id = showSearchResults(RMI.searchComposer(name));
+                }catch(RemoteException exc){
+                    exc.printStackTrace();
+                    retryRMIConnection();
+                }
+            }
+        }
+        while(true) {
+            try {
+                verifier = RMI.insertMusic(username, password, title, duration, lyrics, interpreter_id, composer_id, album_id);
+                break;
+            } catch (RemoteException exc) {
+                retryRMIConnection();
+            }
+        }
+    }
+
+    private void insertMusic() {
+        String title, lyrics;
+        float duration;
+        boolean verifier = false;
+        int interpreter_id = -1, composer_id = -1, album_id = -1;
 
         System.out.println("\n ————————————————");
         System.out.println("INSERT NEW MUSIC");
         System.out.println(" ————————————————\n");
+
         System.out.println("Title: ");
         title = sc.nextLine();
         System.out.println("Duration: ");
-        duration = Float.parseFloat(sc.nextLine());
+        while(true){
+            try{
+
+                duration = Float.parseFloat(sc.nextLine());
+                break;
+            }catch(NumberFormatException e){
+                System.out.println("Please insert a valid option!");
+            }
+        }
         System.out.println("Lyrics: ");
         lyrics = sc.nextLine();
-        System.out.println("Composer ID: ");
-        composer_id = Integer.parseInt(sc.nextLine());
-        System.out.println("Interpreter ID: ");
-        interpreter_id = Integer.parseInt(sc.nextLine());
-        System.out.println("Album ID: ");
-        album_id = Integer.parseInt(sc.nextLine());
+        System.out.println("Composer: ");
+        while(composer_id < 0){
+            System.out.println("1 - Create a new composer\n2 - Find an existing composer:");
+            int reply;
+            do{
+                reply = Integer.parseInt(sc.nextLine().replaceAll("\n", ""));
+                if(reply == 0)return;
+            }while(reply != 2 && reply != 1);
+            if(reply == 1){
+                composer_id = createComposer();
+            }else{
+                System.out.println("Composer name: ");
+                String name = sc.nextLine().replaceAll("\n", "");
+                try{
+                    composer_id = showSearchResults(RMI.searchComposer(name));
+                }catch(RemoteException exc){
+                    exc.printStackTrace();
+                    retryRMIConnection();
+                }
+            }
+        }
+        System.out.println("Interpreter:");
+        while(interpreter_id < 0){
+            System.out.println("1 - Create a new interpreter\n2 - Find an existing interpreter");
+            int reply;
+            do{
+                reply = Integer.parseInt(sc.nextLine());
+                if(reply == 0)return;
+            }while(reply != 2 && reply != 1);
+            if(reply == 1){
+                interpreter_id = createInterpreter();
+            }else{
+                System.out.println("Interpreter name: ");
+                String name = sc.nextLine();
+                try{
+                    interpreter_id = showSearchResults(RMI.searchInterpreter(name));
+                    System.out.println(interpreter_id);
+                }catch(RemoteException exc){
+                    retryRMIConnection();
+                }
+            }
+        }
+        System.out.println("Album:");
+        while(album_id < 0){
+            System.out.println("1 - Create a new album\n2 - Find an existing album");
+            int reply;
+            do{
+                reply = Integer.parseInt(sc.nextLine());
+                if(reply == 0)return;
+            }while(reply != 2 && reply != 1);
+            if(reply == 1){
+               //album_id = createAlbum();
+            }else{
+                System.out.println("Album name:");
+                String name = sc.nextLine();
+                try{
+                    album_id = showSearchResults(RMI.searchAlbum(name, interpreter_id));
+                }catch(RemoteException exc){
+                    retryRMIConnection();
+                }
+            }
+        }
 
         while(true) {
             try {
