@@ -22,4 +22,7 @@ public interface RMIServices extends Remote {
     String[] searchMusic(String name) throws RemoteException;
     int createBand(String name, String description, String date) throws RemoteException;
     int createArtist(String name, String description, String date) throws RemoteException;
+    boolean uploadFile(String username, int musicID, String path) throws RemoteException;
+    ArrayList<String[]> getFiles(String username) throws RemoteException;
+    boolean shareFile(String user_giving, int musicID, String user_receiving) throws RemoteException;
 }

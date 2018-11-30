@@ -395,6 +395,55 @@ public class Server extends UnicastRemoteObject implements RMIServices {
         return (DBUpdate(query));
     }
 
+    public boolean uploadFile(String username, int musicID, String path) {
+        String query = "INSERT into musicfile (pathtofile, music_id, user_username) values (\""+path+"\", "+musicID+", \""+username+"\");";
+
+        if (!DBUpdate(query)) return false;
+
+        return true;
+    }
+
+    public boolean shareFile(String user_giving, int musicID, String user_receiving) {
+        String query = "SELECT pathtofile FROM musicfile WHERE music_id="+musicID+" AND user_username=\""+user_giving+"\"";
+
+        String query1 = "INSERT INTO user_musicfile (user_username, musicfile_pathtofile) VALUES (\""+user_receiving+"\", ("+query+"));";
+
+        if (!DBUpdate(query1)) return false;
+        return true;
+    }
+
+    public ArrayList<String[]> getFiles(String username) { //lista de files ao qual o user está associado, seja por ter feito upload deles ou por estes terem sido partilhados consigo
+        ArrayList<String[]> files = new ArrayList<>();
+
+        String query1 = "SELECT music_id FROM musicfile WHERE user_username=\""+username+"\"";
+        String query2 = "SELECT musicfile.music_id FROM musicfile, user_musicfile " +
+                "WHERE user_musicfile.user_username=\""+username+"\" " +
+                "AND user_musicfile.musicfile_pathtofile=musicfile_pathtofile";
+
+        //join both queries
+        String query3 = query1 +" UNION "+ query2;
+
+        String query4 = "SELECT music.id, music.title, interpreter.name FROM music, interpreter, music_interpreter" +
+                " WHERE music.id=music_interpreter.music_id AND music_interpreter.interpreter_id=interpreter.id AND music.id IN("+query3+");";
+
+        ResultSet res = DBQuery(query4);
+
+        try {
+            while(res.next()) { //enquanto houver linhas no resultado
+                String[] info = new String[3];
+                info[0] = Integer.toString(res.getInt(1));
+                info[1] = res.getString(2);
+                info[2] = res.getString(3);
+
+                files.add(info);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return files;
+    }
+
 
 
     public boolean connectDatabase() { //returns true if connection to DB is successful; false if else

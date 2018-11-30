@@ -120,11 +120,12 @@ public class Client extends UnicastRemoteObject {
             System.out.println("6) Modify info - album");
             System.out.println("7) Upload music file");
             System.out.println("8) Share music file");
-            System.out.println("9) Find music");
-            System.out.println("10) Album info");
-            System.out.println("11) Write album review");
-            System.out.println("12) Editor privileges");
-            System.out.println("13) Playlists");
+            System.out.println("9) Download music file");
+            System.out.println("10) Find music");
+            System.out.println("11) Album info");
+            System.out.println("12) Write album review");
+            System.out.println("13) Editor privileges");
+            System.out.println("14) Playlists");
 
             try {
                 option = Integer.parseInt(sc.nextLine().replaceAll("^[,\\s]+", ""));
@@ -143,24 +144,71 @@ public class Client extends UnicastRemoteObject {
             else if (option == 3 && editor == 1) { //inserir novo artista na BD
                 insertAlbum();
             }
-            else if(option == 9){
+            else if(option == 10){
                 searchMusic();
             }
-            else if(option == 10){
+            else if(option == 11){
                 albumDetails();
             }
-            else if (option == 12 && editor == 1) {
-                changePerks();
+            else if (option == 7) { //upload de ficheiro
+                uploadFile();
             }
-            else if (option == 13) {
-                playlists();
+            else if (option == 8) { //partilha de ficheiro musical com outro user
+                shareFile();
             }
-
-            else if (option == 11) {
+            else if (option == 12) {
                 writeReview();
             }
-
+            else if (option == 13 && editor == 1) {
+                changePerks();
+            }
+            else if (option == 14) {
+                playlists();
+            }
         }
+    }
+
+    private void shareFile() {
+        ArrayList<String[]> files = new ArrayList<>();
+        try {
+            files = RMI.getFiles(username); //lista de ficheiros a que o user tem acesso
+        } catch (RemoteException e) {
+            retryRMIConnection();
+        }
+
+        for (String[] file:files) {
+            System.out.println(file[0] + " - " + file[1] + " by " + file[2]);
+        }
+
+        System.out.println("\nInsert the ID of the music for the file you want to share: ");
+        int musicID = Integer.parseInt(sc.nextLine());
+        System.out.println("Insert the username of the user you want to share this file with: ");
+        String sharing = sc.nextLine();
+
+        try {
+            boolean verifier = RMI.shareFile(username, musicID, sharing);
+        } catch (RemoteException e) {
+            retryRMIConnection();
+        }
+
+    }
+
+    private void uploadFile() {
+        int music;
+        String path;
+        boolean verifier;
+
+        System.out.println("Music ID for the file you're uploading: ");
+        music = Integer.parseInt(sc.nextLine());
+        System.out.println("Path to file: ");
+        path = sc.nextLine();
+
+        try {
+            verifier = RMI.uploadFile(username, music, path);
+        } catch (RemoteException e) {
+            retryRMIConnection();
+        }
+
     }
 
     private void writeReview() {
