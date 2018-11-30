@@ -12,4 +12,7 @@ public interface RMIServices extends Remote {
     public ArrayList<String[]> getPlaylist(String name, String username) throws RemoteException;
     boolean writeReview(String username, int album, String review, int rate) throws RemoteException;
     boolean changePerks(String username) throws RemoteException;
+    boolean uploadFile(String username, int musicID, String path) throws RemoteException;
+    ArrayList<String[]> getFiles(String username) throws RemoteException;
+    boolean shareFile(String user_giving, int musicID, String user_receiving) throws RemoteException;
 }
